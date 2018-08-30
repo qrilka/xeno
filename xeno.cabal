@@ -51,6 +51,7 @@ benchmark xeno-speed-bench
   hs-source-dirs: bench
   main-is: Speed.hs
   build-depends: base, xeno, hexml, criterion, bytestring, deepseq, ghc-prim, xml, hexpat
+               , hw-xml, hw-bits, hw-balancedparens, hw-rankselect, hw-prim
   if flag(libxml2)
     build-depends: libxml
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -O2

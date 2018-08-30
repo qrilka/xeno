@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving, DeriveGeneric #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -24,6 +25,28 @@ import qualified Xeno.DOM
 #ifdef LIBXML2
 import qualified Text.XML.LibXML.Parser as Libxml2
 #endif
+
+import HaskellWorks.Data.Xml.Succinct.Cursor (XmlCursor(..))
+import HaskellWorks.Data.Bits.BitShown (BitShown(..))
+import HaskellWorks.Data.BalancedParens.Simple (SimpleBalancedParens(..))
+import HaskellWorks.Data.RankSelect.CsPoppy
+import HaskellWorks.Data.BalancedParens.RangeMinMax2
+import HaskellWorks.Data.Xml.RawValue
+import HaskellWorks.Data.Xml.Succinct.Index
+import HaskellWorks.Data.TreeCursor
+import HaskellWorks.Data.FromByteString
+
+hwXmlParse :: ByteString -> RawValue
+hwXmlParse bs =
+  case nextSibling cursor of
+    Just rootCursor -> rawValueAt (xmlIndexAt rootCursor)
+    Nothing -> error "xml parsing with hw-xml failed"
+  where
+    XmlCursor !(text::ByteString) (BitShown !ib) (SimpleBalancedParens !bp) _ = fromByteString bs
+    !bpCsPoppy = makeCsPoppy bp
+    !rangeMinMax = mkRangeMinMax2 bpCsPoppy
+    !ibCsPoppy = makeCsPoppy ib
+    cursor = XmlCursor text ibCsPoppy rangeMinMax 1
 
 main :: IO ()
 main =
@@ -51,6 +74,7 @@ main =
 #ifdef LIBXML2
              , bench "libxml2-dom" (whnfIO (Libxml2.parseMemory input))
 #endif
+             , bench "hw-xml" (whnf hwXmlParse input)
              ])
     , env
         (S.readFile "data/text-31kb.xml")
@@ -76,6 +100,7 @@ main =
              , bench "libxml2-dom" (whnfIO (Libxml2.parseMemory input))
 
 #endif
+             , bench "hw-xml" (whnf hwXmlParse input)
              ])
     , env
         (S.readFile "data/fabricated-211kb.xml")
@@ -100,6 +125,7 @@ main =
 #ifdef LIBXML2
              , bench "libxml2-dom" (whnfIO (Libxml2.parseMemory input))
 #endif
+             , bench "hw-xml" (whnf hwXmlParse input)
              ])
     ]
 
